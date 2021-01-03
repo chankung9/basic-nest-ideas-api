@@ -7,5 +7,6 @@
   "database": "ideas",
   "synchronize": true,
   "logging": true,
+  "dropSchema": false,
   "entities": ["dist/**/*.entity{.ts,.js}"]
 }

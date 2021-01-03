@@ -3,20 +3,26 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { UserDTO, UserRO } from './user.dto';
+import { UserRO } from './user.dto';
+import { IdeaEntity } from 'src/idea/idea.entity';
 
-@Entity('user')
+@Entity()
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @CreateDateColumn()
   created: Date;
+
+  @UpdateDateColumn()
+  updated: Date;
 
   @Column({
     type: 'text',
@@ -26,6 +32,9 @@ export class UserEntity {
 
   @Column('text')
   password: string;
+
+  @OneToMany(type => IdeaEntity, idea => idea.author, { cascade: true })
+  ideas: IdeaEntity[];
 
   @BeforeInsert()
   async hashPassword() {
@@ -38,6 +47,11 @@ export class UserEntity {
     if (showToken) {
       responseObject.token = token;
     }
+
+    if (this.ideas) {
+      responseObject.ideas = this.ideas;
+    }
+
     return responseObject;
   }
 

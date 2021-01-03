@@ -1,21 +1,29 @@
+import { UserEntity } from 'src/user/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity('idea')
+@Entity()
 export class IdeaEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @CreateDateColumn()
-  create: Date;
+  created: Date;
+
+  @CreateDateColumn()
+  updated: Date;
 
   @Column('text')
   idea: string;
 
   @Column('text')
   description: string;
+
+  @ManyToOne(type => UserEntity, author => author.ideas)
+  author: UserEntity;
 }

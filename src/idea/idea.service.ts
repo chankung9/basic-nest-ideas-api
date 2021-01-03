@@ -1,7 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserEntity } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
-import { IdeaDTO } from './idea.dto';
+import { IdeaDTO, IdeaRO } from './idea.dto';
 
 import { IdeaEntity } from './idea.entity';
 
@@ -10,41 +11,77 @@ export class IdeaService {
   constructor(
     @InjectRepository(IdeaEntity)
     private ideaRepository: Repository<IdeaEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
   ) {}
 
-  async showAll() {
-    return await this.ideaRepository.find();
+  async showAll(): Promise<IdeaRO[]> {
+    const ideas = await this.ideaRepository.find({ relations: ['author'] });
+    return ideas.map(idea => this.toResponseObject(idea));
   }
 
-  async create(data: IdeaDTO) {
-    const idea = await this.ideaRepository.create(data);
+  async create(userId: string, data: IdeaDTO): Promise<IdeaRO> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const idea = this.ideaRepository.create({ ...data, author: user });
     await this.ideaRepository.save(idea);
-    return idea;
+    return this.toResponseObject(idea);
   }
 
-  async read(id: string) {
-    const idea = await this.ideaRepository.findOne({ where: { id } });
+  async read(id: string): Promise<IdeaRO> {
+    const idea = await this.ideaRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
     if (!idea) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     }
-    return idea;
+    return this.toResponseObject(idea);
   }
 
-  async update(id: string, data: Partial<IdeaDTO>) {
-    const idea = await this.ideaRepository.findOne({ where: { id } });
+  async update(
+    id: string,
+    userId: string,
+    data: Partial<IdeaDTO>,
+  ): Promise<IdeaRO> {
+    let idea = await this.ideaRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+    this.ensureOwnerShip(idea, userId);
     if (!idea) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     }
     await this.ideaRepository.update({ id }, data);
-    return await this.ideaRepository.findOne({ where: { id } });
+    idea = await this.ideaRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+    return this.toResponseObject(idea);
   }
 
-  async destroy(id: string) {
-    const idea = await this.ideaRepository.findOne({ where: { id } });
+  async destroy(id: string, userId: string): Promise<IdeaRO> {
+    const idea = await this.ideaRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+    this.ensureOwnerShip(idea, userId);
     if (!idea) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     }
     await this.ideaRepository.delete({ id });
-    return { deleted: true };
+    return this.toResponseObject(idea);
+  }
+
+  private toResponseObject(idea: IdeaEntity): IdeaRO {
+    return {
+      ...idea,
+      author: idea.author.toResponseObject(false),
+    };
+  }
+
+  private ensureOwnerShip(idea: IdeaEntity, userId: string) {
+    if (idea.author.id !== userId) {
+      throw new HttpException('Incorrect user', HttpStatus.UNAUTHORIZED);
+    }
   }
 }
