@@ -6,7 +6,7 @@
   "password": "postgres",
   "database": "ideas",
   "synchronize": true,
-  "logging": false,
-  "dropSchema": false,
+  "logging": true,
+  "dropSchema": true,
   "entities": ["dist/**/*.entity{.ts,.js}"]
 }
