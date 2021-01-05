@@ -5,6 +5,8 @@ import {
   Body,
   UsePipes,
   UseGuards,
+  Param,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/shared/auth.guard';
 import { ValidationPipe } from 'src/shared/validation.pipe';
@@ -18,8 +20,8 @@ export class UserController {
 
   @Get('api/users')
   @UseGuards(new AuthGuard())
-  showAllUser(@User('username') username: string) {
-    return this.userService.showAll();
+  showAllUser(@Query('page') page: number) {
+    return this.userService.showAll(page);
   }
 
   @Post('login')
