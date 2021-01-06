@@ -1,11 +1,16 @@
+import { UseGuards } from '@nestjs/common';
 import {
   Query,
   Resolver,
   Args,
   ResolveProperty,
   Parent,
+  Mutation,
+  Context,
 } from '@nestjs/graphql';
 import { CommentService } from 'src/comment/comment.service';
+import { AuthGuard } from 'src/shared/auth.guard';
+import { UserDTO } from './user.dto';
 import { UserService } from './user.service';
 
 @Resolver('User')
@@ -18,6 +23,33 @@ export class UserResolver {
   @Query()
   users(@Args('page') page: number) {
     return this.userService.showAll(page);
+  }
+
+  @Query()
+  user(@Args('username') username: string) {
+    return this.userService.read(username);
+  }
+
+  @Query()
+  @UseGuards(new AuthGuard())
+  whoami(@Context('user') user) {
+    const { username } = user;
+    return this.userService.read(username);
+  }
+
+  @Mutation()
+  login(
+    @Args('username') username: string,
+    @Args('password') password: string,
+  ) {
+    const user: UserDTO = { username, password };
+    return this.userService.login(user);
+  }
+
+  @Mutation()
+  register(@Args() { username, password }) {
+    const user: UserDTO = { username, password };
+    return this.userService.register(user);
   }
 
   @ResolveProperty()

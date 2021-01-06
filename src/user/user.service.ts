@@ -20,6 +20,14 @@ export class UserService {
     return users.map(user => user.toResponseObject(false));
   }
 
+  async read(username: string): Promise<UserRO> {
+    const user = await this.userRepository.findOne({
+      where: { username },
+      relations: ['ideas', 'bookmarks'],
+    });
+    return user.toResponseObject();
+  }
+
   async login(data: UserDTO): Promise<UserRO> {
     const { username, password } = data;
     const user = await this.userRepository.findOne({ where: { username } });
@@ -29,7 +37,7 @@ export class UserService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    return user.toResponseObject(false);
+    return user.toResponseObject(true);
   }
 
   async register(data: UserDTO): Promise<UserRO> {
