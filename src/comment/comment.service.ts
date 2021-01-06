@@ -63,7 +63,7 @@ export class CommentService {
       idea,
       author: user,
     });
-    this.commentRepository.save(comment);
+    await this.commentRepository.save(comment);
     return this.toResponseObject(comment);
   }
 
